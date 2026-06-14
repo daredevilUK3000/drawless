@@ -28,8 +28,10 @@ function makeAudio() {
   function ensure() {
     if (ctx) return;
     const AC = (window as any).AudioContext || (window as any).webkitAudioContext; if (!AC) return;
-    ctx = new AC(); master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
-    padGain = ctx.createGain(); padGain.gain.value = 0; padGain.connect(master);
+    const c: AudioContext = new AC();
+    const m = c.createGain(); m.gain.value = 0; m.connect(c.destination);
+    const pg = c.createGain(); pg.gain.value = 0; pg.connect(m);
+    ctx = c; master = m; padGain = pg;
   }
   function note(freq: number, dur: number, peak: number, type: OscillatorType, dest?: AudioNode) {
     if (!ctx || !master) return;
