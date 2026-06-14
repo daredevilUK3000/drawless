@@ -5,6 +5,7 @@ import { userClient } from '@/lib/supabase-server';
 import GameClient from '@/components/GameClient';
 import AuthGate from '@/components/AuthGate';
 import UsernamePrompt from '@/components/UsernamePrompt';
+import Footer from '@/components/Footer';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,6 +26,7 @@ export default async function Home() {
           DRAW<span style={{ color: '#3346D3' }}>LESS</span>
         </h1>
         <p>No puzzle scheduled for today yet. Run the seed script to populate the daily rotation.</p>
+        <Footer />
       </main>
     );
   }
@@ -34,6 +36,7 @@ export default async function Home() {
       {!user && <AuthGate />}
       {user && <UsernamePrompt />}
       <GameClient puzzle={puzzle} signedIn={!!user} username={username} />
+      <Footer />
     </main>
   );
 }
