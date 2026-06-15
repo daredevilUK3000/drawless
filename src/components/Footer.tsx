@@ -4,7 +4,10 @@ export default function Footer() {
   return (
     <footer style={{ marginTop: 28, paddingTop: 14, borderTop: '1px dashed #DEE4DD', fontSize: 12.5, color: '#5A6772', textAlign: 'center' }}>
       <div>A daily one-line physics puzzle.</div>
-      <div style={{ marginTop: 6 }}>
+      <div style={{ marginTop: 8 }}>
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSeVvcoOUcAkxot49engOoBnL374uokjsXdxHQGKUN0M9-wbTQ/viewform" target="_blank" rel="noopener noreferrer" style={{ ...link, borderBottom: '1px solid #3346D3', paddingBottom: 1 }}>💬 Got feedback? Tell me what you think</a>
+      </div>
+      <div style={{ marginTop: 8 }}>
         More from the same maker:{' '}
         <a href="https://attentionforest.app/" target="_blank" rel="noopener noreferrer" style={link}>Attention Forest</a>
         {'  ·  '}
