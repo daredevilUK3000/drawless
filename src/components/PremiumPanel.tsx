@@ -5,6 +5,11 @@ import { useEffect, useState } from 'react';
 
 const GUMROAD_URL = process.env.NEXT_PUBLIC_GUMROAD_URL || '#';
 
+// Premium isn't launched yet. While false, the upsell prompt is hidden entirely
+// so we never advertise a tier that can't be bought. Flip to true (and set the
+// Gumroad env vars) on launch day — no other change needed.
+const PREMIUM_LAUNCHED = false;
+
 export default function PremiumPanel() {
   const [loaded, setLoaded] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
@@ -33,6 +38,10 @@ export default function PremiumPanel() {
   }
 
   if (!loaded) return null;
+
+  // Hide the upsell until premium actually launches (but still show the panel to
+  // anyone already flagged premium, e.g. for testing).
+  if (!isPremium && !PREMIUM_LAUNCHED) return null;
 
   if (isPremium) {
     return (
