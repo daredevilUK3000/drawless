@@ -47,6 +47,7 @@ export default function SetClient({ puzzles, progress, signedIn, username }:
   const [ghosts, setGhosts] = useState<Ghost[]>([]);
   const [ghostsOn, setGhostsOn] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
+  const [shareMsg, setShareMsg] = useState('');
 
   // store each solved line for the composite share card
   const solvedLinesRef = useRef<Record<number, Pt[]>>({});
@@ -161,7 +162,7 @@ export default function SetClient({ puzzles, progress, signedIn, username }:
   function toggleSound(){ const now=audioRef.current?.toggle()??false; setSoundOn(now); }
 
   // ---------- composite share card: all solved lines + total ----------
-  function downloadShareCard() {
+  async function downloadShareCard() {
     const W=1080,H=1080; const c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d')!;
     x.fillStyle='#E4E9EA'; x.fillRect(0,0,W,H);
     x.fillStyle='#1B2733'; x.textAlign='left'; x.font='800 52px ui-monospace,Menlo,monospace'; x.fillText('DRAWLESS',60,96);
@@ -186,10 +187,24 @@ export default function SetClient({ puzzles, progress, signedIn, username }:
     x.fillStyle='#5A6772'; x.font='32px ui-monospace,Menlo,monospace'; x.fillText('TOTAL PIXELS OF INK', W/2, H-108);
     x.fillStyle='#1B2733'; x.font='28px -apple-system,Segoe UI,sans-serif'; const who=username?username+'  ·  ':''; x.fillText(who+'Can you draw less?', W/2, H-60);
     const fname='drawless-set-'+totalInk+'px.png'; const caption='DrawLess daily set — '+totalInk+'px total. Can you draw less?';
-    c.toBlob(async(blob)=>{ if(!blob)return; const file=new File([blob],fname,{type:'image/png'}); const navAny=navigator as any;
-      if(navAny.canShare&&navAny.canShare({files:[file]})&&navAny.share){try{await navAny.share({files:[file],text:caption,title:'DrawLess'});return;}catch(e:any){if(e&&e.name==='AbortError')return;}}
-      const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=fname;document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),2000);
-    },'image/png');
+    // Generate the PNG blob up front (await it), THEN decide how to deliver it.
+    const blob: Blob | null = await new Promise(res => c.toBlob(b => res(b), 'image/png'));
+    if (!blob) { setShareMsg('Could not build the image — try again.'); return; }
+    const file = new File([blob], fname, { type: 'image/png' });
+    const navAny = navigator as any;
+    // Only use the native share sheet when the device genuinely supports sharing
+    // FILES (this is reliable on mobile, unreliable on desktop). Otherwise download.
+    const canShareFiles = !!(navAny.canShare && navAny.canShare({ files: [file] }) && navAny.share);
+    if (canShareFiles) {
+      try { await navAny.share({ files: [file], text: caption, title: 'DrawLess' }); return; }
+      catch (e: any) { if (e && e.name === 'AbortError') return; /* fall through to download */ }
+    }
+    // Reliable fallback (all desktops, and any device without file-share): download the PNG.
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = fname;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    setShareMsg('Image saved to your downloads — attach it from there to share.');
   }
 
   // ---------- render ----------
@@ -241,6 +256,7 @@ export default function SetClient({ puzzles, progress, signedIn, username }:
           <div style={{ display:'flex', gap:10, marginTop:16, justifyContent:'center', flexWrap:'wrap' }}>
             <button onClick={downloadShareCard} style={{ background:'#3346D3', color:'#fff', border:'none', borderRadius:6, padding:'12px 18px', fontWeight:700, fontSize:14, cursor:'pointer' }}>📤 Share my set</button>
           </div>
+          {shareMsg && <p style={{ fontSize:12.5, color:'#5A6772', marginTop:8 }}>{shareMsg}</p>}
           <p style={{ fontSize:12.5, color:'#5A6772', marginTop:14, borderTop:'1px dashed #DEE4DD', paddingTop:12 }}>
             That's today's set done. 🗓️ Five new puzzles unlock tomorrow.{!signedIn && ' Sign in to save your scores and streak.'}
           </p>
