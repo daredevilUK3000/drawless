@@ -17,6 +17,12 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supa.auth.getUser();
   if (!user) return NextResponse.json({ error: 'not_authenticated' }, { status: 401 });
 
+  // Developer bypass: the account whose email matches DEV_EMAIL can replay freely.
+  // Their solves are NOT recorded (no leaderboard pollution) and the in-order /
+  // already-solved gates are skipped. Invisible to everyone else.
+  const devEmail = process.env.DEV_EMAIL?.toLowerCase();
+  const isDev = !!devEmail && user.email?.toLowerCase() === devEmail;
+
   let body: any;
   try { body = await req.json(); } catch { return NextResponse.json({ error: 'bad_json' }, { status: 400 }); }
   const points = body?.line;
@@ -41,7 +47,7 @@ export async function POST(req: NextRequest) {
   const { data: progRow } = await admin.from('daily_progress')
     .select('solved_count,total_ink,completed').eq('user_id', user.id).eq('play_date', todayUTC()).maybeSingle();
   const solvedCount = progRow?.solved_count ?? 0;
-  if (puzzle.set_position > solvedCount + 1) {
+  if (!isDev && puzzle.set_position > solvedCount + 1) {
     return NextResponse.json({ error: 'locked', message: 'Solve the earlier puzzles first.' }, { status: 403 });
   }
 
@@ -50,6 +56,15 @@ export async function POST(req: NextRequest) {
   const result = validator.simulate(puzzle.definition, line);
   if (!result.solved) return NextResponse.json({ solved: false }, { status: 200 });
   const ink = validator.polyLen(line);
+
+  // Dev bypass: verified, but not recorded. Lets the developer replay endlessly.
+  if (isDev) {
+    return NextResponse.json({
+      solved: true, ink, puzzlePosition: puzzle.set_position,
+      solvedCount, totalInk: (progRow?.total_ink ?? 0), completed: false, dev: true,
+      worldBest: puzzle.world_best ?? ink, worldAvg: puzzle.definition?.stats?.worldAvg ?? null
+    });
+  }
 
   // Record first solve (unique constraint => first is final).
   const { error: insErr } = await admin.from('solutions').insert({ puzzle_id: puzzle.id, user_id: user.id, ink, line });

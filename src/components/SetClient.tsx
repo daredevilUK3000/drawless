@@ -48,6 +48,7 @@ export default function SetClient({ puzzles, progress, signedIn, username }:
   const [ghostsOn, setGhostsOn] = useState(false);
   const [soundOn, setSoundOn] = useState(false);
   const [shareMsg, setShareMsg] = useState('');
+  const [isDev, setIsDev] = useState(false);
 
   // store each solved line for the composite share card
   const solvedLinesRef = useRef<Record<number, Pt[]>>({});
@@ -143,9 +144,15 @@ export default function SetClient({ puzzles, progress, signedIn, username }:
       const res = await fetch('/api/solve', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ puzzleId: current.id, line }) });
       const d = await res.json();
       setLastResult(d);
-      if (d.solved) { setTotalInk(d.totalInk ?? totalInk); setSolvedCount(d.solvedCount ?? solvedCount); setCompleted(!!d.completed); }
       loadGhosts(current.id);
-      if (d.solved) setTimeout(()=>advance(idx + 1), 50);
+      if (d.dev) {
+        // Developer bypass: solve verified but not recorded. Don't advance or
+        // complete — let the dev replay this puzzle (or skip ahead manually).
+        setIsDev(true);
+      } else if (d.solved) {
+        setTotalInk(d.totalInk ?? totalInk); setSolvedCount(d.solvedCount ?? solvedCount); setCompleted(!!d.completed);
+        setTimeout(()=>advance(idx + 1), 50);
+      }
     } catch { setLastResult({ error:'network' }); }
     setSubmitting(false);
   }
@@ -157,7 +164,11 @@ export default function SetClient({ puzzles, progress, signedIn, username }:
     // player controls the pace and can view ghosts first.
   }
 
-  function goNext() { setIdx(i => Math.min(setSize, i + 1)); setLastResult(null); }
+  function goNext() {
+    setLastResult(null);
+    if (isDev) { setIdx(i => (i + 1) % setSize); }   // dev cycles through the set endlessly
+    else setIdx(i => Math.min(setSize, i + 1));
+  }
 
   function toggleSound(){ const now=audioRef.current?.toggle()??false; setSoundOn(now); }
 
@@ -239,8 +250,9 @@ export default function SetClient({ puzzles, progress, signedIn, username }:
               <div style={{ display:'flex', gap:8, marginTop:10, flexWrap:'wrap' }}>
                 {ghosts.length>0 && <button onClick={()=>setGhostsOn(o=>!o)} style={btnGhost(ghostsOn)}>GHOST LINES: {ghostsOn?'ON':'OFF'}</button>}
                 {ghostsOn && ghosts.map((g,i)=>(<button key={i} onClick={()=>stateRef.current.replay&&stateRef.current.replay(g.line)} style={btnWatch}>▶ {(g.display_name||'player')} ({g.ink}px)</button>))}
+                {isDev && <button onClick={()=>{ setLastResult(null); stateRef.current.phase='ready'; stateRef.current.pts=[]; setInk(0); }} style={{ background:'#fff', color:'#C8472F', border:'1px solid #C8472F', borderRadius:6, padding:'9px 14px', fontWeight:700, fontSize:13, cursor:'pointer' }}>↻ replay (dev)</button>}
                 <button onClick={goNext} style={{ background:'#3346D3', color:'#fff', border:'none', borderRadius:6, padding:'9px 16px', fontWeight:700, fontSize:14, cursor:'pointer', marginLeft:'auto' }}>
-                  {idx+1>=setSize ? 'Finish set →' : 'Next puzzle →'}
+                  {idx+1>=setSize ? (isDev ? 'Next (dev) →' : 'Finish set →') : 'Next puzzle →'}
                 </button>
               </div>
             </div>

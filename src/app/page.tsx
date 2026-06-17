@@ -7,6 +7,7 @@ import AuthGate from '@/components/AuthGate';
 import UsernamePrompt from '@/components/UsernamePrompt';
 import PremiumPanel from '@/components/PremiumPanel';
 import Footer from '@/components/Footer';
+import AccountPanel from '@/components/AccountPanel';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,6 +40,7 @@ export default async function Home() {
       {user && <UsernamePrompt />}
       <SetClient puzzles={puzzles} progress={progress} signedIn={!!user} username={username} />
       {user && <PremiumPanel />}
+      {user && <AccountPanel />}
       <Footer />
     </main>
   );
