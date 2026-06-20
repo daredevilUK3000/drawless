@@ -8,6 +8,7 @@ import UsernamePrompt from '@/components/UsernamePrompt';
 import PremiumPanel from '@/components/PremiumPanel';
 import Footer from '@/components/Footer';
 import AccountPanel from '@/components/AccountPanel';
+import ThemeController from '@/components/ThemeController';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,10 +17,16 @@ export default async function Home() {
   const supa = userClient();
   const { data: { user } } = await supa.auth.getUser();
   let username: string | null = null;
+  let theme = 'daylight';
+  let isPremium = false;
   if (user) {
-    const { data: prof } = await supa.from('profiles').select('display_name').eq('user_id', user.id).single();
+    const { data: prof } = await supa.from('profiles').select('display_name,theme,is_premium').eq('user_id', user.id).single();
     username = prof?.display_name ?? null;
+    theme = prof?.theme ?? 'daylight';
+    isPremium = !!prof?.is_premium;
   }
+  const devEmail = process.env.DEV_EMAIL?.toLowerCase();
+  const isDev = !!devEmail && user?.email?.toLowerCase() === devEmail;
   const progress = await getTodaysProgress(user?.id ?? null);
 
   if (!puzzles || !puzzles.length) {
@@ -36,11 +43,14 @@ export default async function Home() {
 
   return (
     <main style={{ maxWidth: 760, margin: '0 auto', padding: 12 }}>
-      {!user && <AuthGate />}
-      {user && <UsernamePrompt />}
-      <SetClient puzzles={puzzles} progress={progress} signedIn={!!user} username={username} />
-      {user && <PremiumPanel />}
-      {user && <AccountPanel />}
+      <ThemeController initialTheme={theme} isPremium={isPremium} isDev={isDev} />
+      <div style={{ background: 'rgba(255,255,255,0.92)', borderRadius: 12, padding: '14px 16px', marginTop: 10, boxShadow: '0 10px 40px rgba(0,0,0,0.18)' }}>
+        {!user && <AuthGate />}
+        {user && <UsernamePrompt />}
+        <SetClient puzzles={puzzles} progress={progress} signedIn={!!user} username={username} />
+        {user && <PremiumPanel />}
+        {user && <AccountPanel />}
+      </div>
       <Footer />
     </main>
   );

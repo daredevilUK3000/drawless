@@ -5,6 +5,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import Matter from 'matter-js';
+import { themeStore } from './ThemeController';
 
 const VW = 800, VH = 600, STROKE_W = 12, MIN_POINT_DIST = 5, STEP = 1000/60;
 const SETTLE_FRAMES = 10, REST_SPEED = 0.4;
@@ -104,14 +105,14 @@ export default function SetClient({ puzzles, progress, signedIn, username }:
     function finishWin(){S.phase='cooldown';if(replayRef.current.active){setTimeout(()=>{clearLine();resetBall();S.pts=[];S.phase='ready';replayRef.current.active=false;},1000);}else{const solvedLine=S.pts.slice();submitSolve(solvedLine);setTimeout(()=>{clearLine();resetBall();S.pts=[];S.phase='ready';},1400);}}
     function onEnd(){S.phase='cooldown';const wasReplay=replayRef.current.active;if(!wasReplay)audioRef.current?.miss();setTimeout(()=>{clearLine();resetBall();S.pts=[];S.phase='ready';if(wasReplay)replayRef.current.active=false;},800);}
 
-    function draw(){const ctx=canvasRef.current!.getContext('2d')!;const tint=TIER_BG[def.difficulty]||TIER_BG['easy'];const grad=ctx.createLinearGradient(0,0,0,VH);grad.addColorStop(0,tint.top);grad.addColorStop(1,tint.bot);ctx.fillStyle=grad;ctx.fillRect(0,0,VW,VH);
-      ctx.strokeStyle='#DEE4DD';ctx.lineWidth=1;ctx.globalAlpha=0.55;ctx.beginPath();for(let x=40;x<VW;x+=40){ctx.moveTo(x,0);ctx.lineTo(x,VH);}for(let y=40;y<VH;y+=40){ctx.moveTo(0,y);ctx.lineTo(VW,y);}ctx.stroke();ctx.globalAlpha=1;
-      ctx.lineWidth=1.5;ctx.globalAlpha=0.9;ctx.beginPath();for(let x=200;x<VW;x+=200){ctx.moveTo(x,0);ctx.lineTo(x,VH);}for(let y=200;y<VH;y+=200){ctx.moveTo(0,y);ctx.lineTo(VW,y);}ctx.stroke();ctx.globalAlpha=1;
+    function draw(){const ctx=canvasRef.current!.getContext('2d')!;const th=themeStore.current;const grad=ctx.createLinearGradient(0,0,0,VH);grad.addColorStop(0,th.canvasTop);grad.addColorStop(1,th.canvasBot);ctx.fillStyle=grad;ctx.fillRect(0,0,VW,VH);
+      ctx.strokeStyle=themeStore.current.grid;ctx.lineWidth=1;ctx.globalAlpha=0.55;ctx.beginPath();for(let x=40;x<VW;x+=40){ctx.moveTo(x,0);ctx.lineTo(x,VH);}for(let y=40;y<VH;y+=40){ctx.moveTo(0,y);ctx.lineTo(VW,y);}ctx.stroke();ctx.globalAlpha=1;
+      ctx.strokeStyle=themeStore.current.grid;ctx.lineWidth=1.5;ctx.globalAlpha=0.9;ctx.beginPath();for(let x=200;x<VW;x+=200){ctx.moveTo(x,0);ctx.lineTo(x,VH);}for(let y=200;y<VH;y+=200){ctx.moveTo(0,y);ctx.lineTo(VW,y);}ctx.stroke();ctx.globalAlpha=1;
       const g=def.goal;ctx.strokeStyle='#1E9E6A';ctx.lineWidth=2.5;ctx.setLineDash([8,7]);ctx.strokeRect(g.x-g.w/2,g.y-g.h/2,g.w,g.h);ctx.setLineDash([]);ctx.font='700 12px ui-monospace,Menlo,monospace';ctx.textAlign='center';ctx.fillStyle='#1E9E6A';ctx.fillText('TARGET',g.x,g.y-g.h/2-8);
-      ctx.fillStyle='#1B2733';for(const d of def.bodies){ctx.save();if(d.type==='rect'){ctx.translate(d.x,d.y);ctx.rotate(d.angle||0);ctx.fillRect(-d.w/2,-d.h/2,d.w,d.h);}else{ctx.beginPath();ctx.arc(d.x,d.y,d.r,0,Math.PI*2);ctx.fill();}ctx.restore();}
+      ctx.fillStyle=themeStore.current.ink;for(const d of def.bodies){ctx.save();if(d.type==='rect'){ctx.translate(d.x,d.y);ctx.rotate(d.angle||0);ctx.fillRect(-d.w/2,-d.h/2,d.w,d.h);}else{ctx.beginPath();ctx.arc(d.x,d.y,d.r,0,Math.PI*2);ctx.fill();}ctx.restore();}
       if(ghostsOnRef.current&&ghostsRef.current.length){if(ghostAnim<1)ghostAnim=Math.min(1,ghostAnim+0.02);const gs=ghostsRef.current;for(let i=0;i<gs.length;i++){const gl=gs[i];if(!gl.line||gl.line.length<2)continue;const best=i===0;const n=Math.max(2,Math.ceil(gl.line.length*ghostAnim));ctx.save();ctx.globalAlpha=0.4;ctx.strokeStyle=best?'#C8472F':'#5A6772';ctx.lineWidth=STROKE_W;ctx.lineJoin='round';ctx.lineCap='round';ctx.beginPath();ctx.moveTo(gl.line[0][0],gl.line[0][1]);for(let k=1;k<n;k++)ctx.lineTo(gl.line[k][0],gl.line[k][1]);ctx.stroke();ctx.restore();}}else ghostAnim=0;
-      if(S.pts.length>=2){ctx.strokeStyle=replayRef.current.active?'#C8472F':'#3346D3';ctx.lineWidth=STROKE_W;ctx.lineJoin='round';ctx.lineCap='round';ctx.beginPath();ctx.moveTo(S.pts[0][0],S.pts[0][1]);for(let i=1;i<S.pts.length;i++)ctx.lineTo(S.pts[i][0],S.pts[i][1]);ctx.stroke();}
-      ctx.fillStyle='#3346D3';ctx.beginPath();ctx.arc(ball.position.x,ball.position.y,def.ball.r,0,Math.PI*2);ctx.fill();}
+      if(S.pts.length>=2){ctx.strokeStyle=replayRef.current.active?'#C8472F':themeStore.current.accent;ctx.lineWidth=STROKE_W;ctx.lineJoin='round';ctx.lineCap='round';ctx.beginPath();ctx.moveTo(S.pts[0][0],S.pts[0][1]);for(let i=1;i<S.pts.length;i++)ctx.lineTo(S.pts[i][0],S.pts[i][1]);ctx.stroke();}
+      ctx.fillStyle=themeStore.current.accent;ctx.beginPath();ctx.arc(ball.position.x,ball.position.y,def.ball.r,0,Math.PI*2);ctx.fill();}
 
     const canvas=canvasRef.current!;
     function toV(e:PointerEvent):Pt{const r=canvas.getBoundingClientRect();return[(e.clientX-r.left)*VW/r.width,(e.clientY-r.top)*VH/r.height];}
@@ -280,7 +281,3 @@ export default function SetClient({ puzzles, progress, signedIn, username }:
 
 function btnGhost(on:boolean):React.CSSProperties{ return { fontFamily:'ui-monospace,Menlo,monospace', fontSize:12.5, border:'1px solid '+(on?'#3346D3':'#DEE4DD'), color:on?'#3346D3':'#5A6772', background:'#fff', padding:'7px 12px', borderRadius:4, cursor:'pointer', fontWeight:on?700:400 }; }
 const btnWatch: React.CSSProperties = { fontFamily:'ui-monospace,Menlo,monospace', fontSize:11.5, border:'1px solid #C8472F', color:'#C8472F', background:'#fff', padding:'6px 9px', borderRadius:4, cursor:'pointer' };
-const TIER_BG: Record<string,{top:string;bot:string}> = {
-  'easy':{top:'#F4F7F4',bot:'#E7EEE9'},'easy-medium':{top:'#F2F6F7',bot:'#E3ECEF'},'medium':{top:'#F1F4F8',bot:'#E1E8F1'},
-  'medium-hard':{top:'#F2F2F8',bot:'#E4E2F0'},'hard':{top:'#F3F0F6',bot:'#E7E0EE'},'grand-master':{top:'#F2EEF3',bot:'#E6DCE8'}
-};

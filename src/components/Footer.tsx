@@ -2,7 +2,7 @@
 export default function Footer() {
   const link = { color: '#3346D3', textDecoration: 'none', fontWeight: 600 };
   return (
-    <footer style={{ marginTop: 28, paddingTop: 14, borderTop: '1px dashed #DEE4DD', fontSize: 12.5, color: '#5A6772', textAlign: 'center' }}>
+    <footer style={{ marginTop: 20, padding: '12px 16px', borderRadius: 10, background: 'rgba(255,255,255,0.85)', fontSize: 12.5, color: '#5A6772', textAlign: 'center' }}>
       <div>A daily one-line physics puzzle.</div>
       <div style={{ marginTop: 8 }}>
         <a href="https://docs.google.com/forms/d/e/1FAIpQLSeVvcoOUcAkxot49engOoBnL374uokjsXdxHQGKUN0M9-wbTQ/viewform" target="_blank" rel="noopener noreferrer" style={{ ...link, borderBottom: '1px solid #3346D3', paddingBottom: 1 }}>💬 Got feedback? Tell me what you think</a>
